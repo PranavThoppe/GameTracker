@@ -1,103 +1,132 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+
+const STORAGE_USERNAME_KEY = "sleeper:username";
+const STORAGE_USERID_KEY = "sleeper:user_id";
+
+export default function Page() {
+  const router = useRouter();
+
+  const [username, setUsername] = useState("");
+  const [userId, setUserId] = useState("");
+  const [showUserIdField, setShowUserIdField] = useState(false);
+  const [resolving, setResolving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // If already saved on this device, go straight to /home
+  useEffect(() => {
+    const u = localStorage.getItem(STORAGE_USERNAME_KEY);
+    const id = localStorage.getItem(STORAGE_USERID_KEY);
+    if (u || id) router.replace("/home");
+  }, [router]);
+
+  async function continueWithUsername() {
+    const u = username.trim();
+    if (!u) return;
+    setResolving(true);
+    setErrorMsg(null);
+    try {
+      const r = await fetch(`/api/sleeper/user?username=${encodeURIComponent(u)}`);
+      if (!r.ok) throw new Error("resolve-failed");
+      const data: { username?: string; user_id?: string } = await r.json();
+      localStorage.setItem(STORAGE_USERNAME_KEY, data.username ?? u);
+      if (data.user_id) localStorage.setItem(STORAGE_USERID_KEY, data.user_id);
+      router.push("/home");
+    } catch {
+      setErrorMsg("Couldn’t find that username. Double-check and try again.");
+    } finally {
+      setResolving(false);
+    }
+  }
+
+  function continueWithId() {
+    const id = userId.trim();
+    if (!id) return;
+    localStorage.setItem(STORAGE_USERID_KEY, id);
+    if (username.trim()) localStorage.setItem(STORAGE_USERNAME_KEY, username.trim());
+    router.push("/home");
+  }
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <main className="min-h-screen grid place-items-center p-6">
+      <Card className="w-full max-w-md border-white/10 bg-neutral-900/60 backdrop-blur">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-slate-200">Login to your account</CardTitle>
+        </CardHeader>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+        <CardContent className="space-y-5 pt-0">
+          {/* Username */}
+          <div className="space-y-2">
+            <Label htmlFor="sleeper-username" className="text-slate-200">
+              Sleeper Username
+            </Label>
+            <Input
+              id="sleeper-username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && username.trim() && !resolving) {
+                  continueWithUsername();
+                }
+              }}
+              className="bg-neutral-900 border-white/10 text-slate-100 placeholder:text-slate-500"
+              autoComplete="username"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+          </div>
+
+          <div className="space-y-4">
+            <Button
+              variant="secondary"
+              className="w-full"
+              disabled={!username.trim() || resolving}
+              onClick={continueWithUsername}
+              aria-busy={resolving}
+            >
+              {resolving ? "Resolving…" : "Continue"}
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full"
+              onClick={() => setShowUserIdField((v) => !v)}
+            >
+              Continue with User ID
+            </Button>
+          </div>
+
+          {showUserIdField && (
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="sleeper-userid" className="text-slate-200">
+                  Sleeper User ID
+                </Label>
+                <Input
+                  id="sleeper-userid"
+                  placeholder="e.g. 609953423353356288"
+                  value={userId}
+                  onChange={(e) => setUserId(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && userId.trim()) continueWithId();
+                  }}
+                  className="bg-neutral-900 border-white/10 text-slate-100 placeholder:text-slate-500"
+                  inputMode="numeric"
+                />
+              </div>
+              <Button className="w-full" disabled={!userId.trim()} onClick={continueWithId}>
+                Continue with this ID
+              </Button>
+            </div>
+          )}
+
+          {errorMsg && <p className="text-sm text-red-400">{errorMsg}</p>}
+        </CardContent>
+      </Card>
+    </main>
   );
 }
