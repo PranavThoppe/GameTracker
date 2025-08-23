@@ -105,14 +105,14 @@ export default function HomeScreen() {
   return (
     <main className="mx-auto max-w-7xl p-6 space-y-6">
       {/* Header Card with Controls */}
-      <Card className="border-white/10 bg-neutral-900/60">
+      <Card className="border-cyan-400/20 bg-cyan-900/30 backdrop-blur shadow-lg shadow-cyan-500/20">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-slate-200 text-2xl">Leagues</CardTitle>
             <Button 
               variant="outline" 
               onClick={handleSignOut}
-              className="border-white/10 bg-neutral-800 text-slate-200 hover:bg-neutral-700"
+              className="border-cyan-400/30 bg-cyan-800/50 text-slate-200 hover:bg-cyan-700/60 hover:border-cyan-300/40"
             >
               <LogOut className="w-4 h-4 mr-2" />
               Sign Out
@@ -123,12 +123,12 @@ export default function HomeScreen() {
           <div className="flex items-center gap-2">
             <label className="text-slate-300 text-sm font-medium">Season:</label>
             <Select value={season.toString()} onValueChange={(value) => setSeason(Number(value))}>
-              <SelectTrigger className="w-32 bg-neutral-800 border-white/10 text-slate-100">
+              <SelectTrigger className="w-32 bg-cyan-800/50 border-cyan-400/30 text-slate-100">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-neutral-800 border-white/10">
+              <SelectContent className="bg-cyan-800/80 border-cyan-400/30">
                 {yearOptions.map((year) => (
-                  <SelectItem key={year} value={year.toString()} className="text-slate-100">
+                  <SelectItem key={year} value={year.toString()} className="text-slate-100 hover:bg-cyan-700/50">
                     {year}
                   </SelectItem>
                 ))}
@@ -163,7 +163,7 @@ export default function HomeScreen() {
           {leagues.map((league) => (
             <Card 
               key={league.league_id} 
-              className="border-white/10 bg-neutral-900/60 hover:bg-neutral-900/80 transition-colors cursor-pointer"
+              className="border-cyan-400/20 bg-cyan-900/30 hover:bg-cyan-800/50 transition-all duration-200 cursor-pointer backdrop-blur shadow-lg shadow-cyan-500/10 hover:shadow-cyan-500/20 hover:border-cyan-300/30"
               onClick={() => handleLeagueClick(league.league_id)}
             >
               <CardHeader className="pb-3">
@@ -202,7 +202,7 @@ export default function HomeScreen() {
                 {/* League Members Combobox - Shows when league is selected */}
                 {selectedLeague === league.league_id && (
                   <div 
-                    className="space-y-2 pt-2 border-t border-white/10"
+                    className="space-y-2 pt-2 border-t border-cyan-400/20"
                     onClick={(e) => e.stopPropagation()} // Prevent card click when interacting with combobox
                   >
                     <label className="text-slate-300 text-sm font-medium">Members:</label>
@@ -215,7 +215,7 @@ export default function HomeScreen() {
                           variant="outline"
                           role="combobox"
                           aria-expanded={openCombobox === league.league_id}
-                          className="w-full justify-between bg-neutral-800 border-white/10 text-slate-100 hover:bg-neutral-700"
+                          className="w-full justify-between bg-cyan-800/50 border-cyan-400/30 text-slate-100 hover:bg-cyan-700/60 hover:border-cyan-300/40"
                           onClick={(e) => e.stopPropagation()} // Prevent card click
                         >
                           {selectedMembers[league.league_id] && members.length > 0
@@ -226,11 +226,11 @@ export default function HomeScreen() {
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-full p-0 bg-neutral-800 border-white/10">
-                        <Command className="bg-neutral-800">
+                      <PopoverContent className="w-full p-0 bg-cyan-800/80 border-cyan-400/30 shadow-lg shadow-cyan-500/20">
+                        <Command className="bg-cyan-800/80">
                           <CommandInput 
                             placeholder="Search members..." 
-                            className="bg-neutral-800 text-slate-100"
+                            className="bg-cyan-800/50 text-slate-100 border-cyan-400/20"
                           />
                           <CommandList>
                             <CommandEmpty className="text-slate-400">
@@ -245,7 +245,7 @@ export default function HomeScreen() {
                                     key={member.user_id}
                                     value={`${member.display_name || member.username} ${member.user_id}`}
                                     onSelect={() => handleMemberSelect(league.league_id, member.user_id)}
-                                    className="text-slate-100 hover:bg-neutral-700"
+                                    className="text-slate-100 hover:bg-cyan-700/50"
                                   >
                                     <Check
                                       className={cn(

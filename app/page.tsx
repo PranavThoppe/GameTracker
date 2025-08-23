@@ -55,7 +55,7 @@ export default function Page() {
 
   return (
     <main className="min-h-screen grid place-items-center p-6">
-      <Card className="w-full max-w-md border-white/10 bg-neutral-900/60 backdrop-blur">
+      <Card className="w-full max-w-md border-cyan-400/20 bg-cyan-900/30 backdrop-blur shadow-lg shadow-cyan-500/20">
         <CardHeader className="pb-2">
           <CardTitle className="text-slate-200">Login to your account</CardTitle>
         </CardHeader>
