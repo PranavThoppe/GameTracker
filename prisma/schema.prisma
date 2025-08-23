@@ -1,0 +1,57 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Player {
+  id                    String   @id // player_id from Sleeper
+  fullName              String?
+  firstName             String?
+  lastName              String?
+  position              String?
+  team                  String?
+  teamAbbr              String?
+  status                String?
+  active                Boolean  @default(false)
+  yearsExp              Int?
+  age                   Int?
+  height                String?
+  weight                String?
+  college               String?
+  birthDate             String?
+  fantasyPositions      String   // JSON string for SQLite
+  injuryStatus          String?
+  injuryBodyPart        String?
+  injuryNotes           String?
+  depthChartPosition    String?
+  depthChartOrder       Int?
+  searchRank            Int?
+  
+  // External IDs
+  espnId                Int?
+  yahooId               Int?
+  rotowireId            Int?
+  statsId               Int?
+  fantasyDataId         Int?
+  
+  // Metadata
+  lastUpdated           DateTime @default(now()) @updatedAt
+  createdAt             DateTime @default(now())
+  
+  @@map("players")
+}
+
+model PlayerSyncLog {
+  id          Int      @id @default(autoincrement())
+  syncedAt    DateTime @default(now())
+  playerCount Int
+  success     Boolean  @default(true)
+  errorMsg    String?
+  
+  @@map("player_sync_logs")
+}
