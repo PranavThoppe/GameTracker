@@ -5,6 +5,9 @@ import Providers from "./providers";
 export const metadata: Metadata = {
   title: "Fantasy GameTracker",
   description: "Sleeper + local TV games + model picks",
+  icons: {
+    icon: "/favicon.png", // or your logo filename
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

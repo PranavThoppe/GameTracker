@@ -181,10 +181,10 @@ export default function HomeScreen() {
                       variant="secondary"
                       onClick={(e) => {
                         e.stopPropagation();
-                        // TODO: Add analyze functionality
-                        console.log('Analyze league:', league.league_id);
+                        // Use the logged-in user's ID automatically
+                        router.push(`/home/analyze?league_id=${league.league_id}&member_id=${userId}`);
                       }}
-                      className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600 hover:border-blue-700 text-xs px-3 py-1.5"
+                      className="bg-blue-600 hover:bg-blue-100 text-white border-blue-600 hover:border-blue-700 text-xs px-3 py-1.5"
                     >
                       Analyze
                     </Button>
