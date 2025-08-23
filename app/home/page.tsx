@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/popover";
 import { LogOut, ChevronsUpDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Logo } from "@/components/ui/logo";
 
 const STORAGE_USERID_KEY = "sleeper:user_id";
 const STORAGE_USERNAME_KEY = "sleeper:username";
@@ -104,6 +105,9 @@ export default function HomeScreen() {
 
   return (
     <main className="mx-auto max-w-7xl p-6 space-y-6">
+      {/* Banner */}
+      <Logo className="mb-8" width={600} height={150} />
+
       {/* Header Card with Controls */}
       <Card className="border-cyan-400/20 bg-cyan-900/30 backdrop-blur shadow-lg shadow-cyan-500/20">
         <CardHeader className="pb-4">
