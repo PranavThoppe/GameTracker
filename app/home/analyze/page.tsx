@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, User } from "lucide-react";
+import { ArrowLeft, User, Radio, Calendar } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { usePlayersByIds } from "../../hooks/usePlayers";
 
@@ -24,11 +24,14 @@ interface LeagueMember {
   display_name: string | null;
 }
 
+type AnalysisView = 'broadcast' | 'schedule';
+
 export default function AnalyzeScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const leagueId = searchParams.get("league_id");
   const memberId = searchParams.get("member_id");
+  const [activeView, setActiveView] = useState<AnalysisView>('broadcast');
 
   // Fetch league members to get member info
   const { data: members } = useQuery<LeagueMember[]>({
@@ -73,6 +76,10 @@ export default function AnalyzeScreen() {
     router.back();
   };
 
+  const handleViewChange = (view: AnalysisView) => {
+    setActiveView(view);
+  };
+
   if (!leagueId || !memberId) {
     return null; // Will redirect in useEffect
   }
@@ -80,8 +87,123 @@ export default function AnalyzeScreen() {
   const memberName = member?.display_name || member?.username || "Unknown Member";
   const isLoading = rostersLoading || playersLoading;
 
+  const renderBroadcastView = () => (
+    <div className="space-y-6 opacity-0 animate-fade-in">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {/* Game Coverage Card */}
+        <Card className="border-cyan-400/20 bg-cyan-900/30 backdrop-blur shadow-lg shadow-cyan-500/10">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-slate-200 text-lg flex items-center gap-2">
+              <Radio className="w-5 h-5" />
+              Live TV Coverage
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="text-center py-8">
+                <p className="text-slate-400">No live games detected</p>
+                <p className="text-slate-500 text-sm mt-1">Check back during game days</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Upcoming Games Card */}
+        <Card className="border-cyan-400/20 bg-cyan-900/30 backdrop-blur shadow-lg shadow-cyan-500/10">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-slate-200 text-lg">Upcoming Games</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="text-center py-8">
+                <p className="text-slate-400">Loading game data...</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Network Information Card */}
+        <Card className="border-cyan-400/20 bg-cyan-900/30 backdrop-blur shadow-lg shadow-cyan-500/10">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-slate-200 text-lg">Network Guide</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="text-center py-8">
+                <p className="text-slate-400">Network info coming soon</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Large Coverage Map Card */}
+      <Card className="border-cyan-400/20 bg-cyan-900/30 backdrop-blur shadow-lg shadow-cyan-500/10">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-slate-200 text-lg">Regional Coverage Map</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-16">
+            <p className="text-slate-400 text-lg">Interactive coverage map coming soon...</p>
+            <p className="text-slate-500 text-sm mt-2">See which games are available in your area</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const renderScheduleView = () => (
+    <div className="space-y-6 opacity-0 animate-fade-in">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* This Week Card */}
+        <Card className="border-cyan-400/20 bg-cyan-900/30 backdrop-blur shadow-lg shadow-cyan-500/10">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-slate-200 text-lg flex items-center gap-2">
+              <Calendar className="w-5 h-5" />
+              This Week
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="text-center py-8">
+                <p className="text-slate-400">Loading weekly schedule...</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Player Matchups Card */}
+        <Card className="border-cyan-400/20 bg-cyan-900/30 backdrop-blur shadow-lg shadow-cyan-500/10">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-slate-200 text-lg">Player Matchups</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="text-center py-8">
+                <p className="text-slate-400">Analyzing matchups...</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Full Schedule Card */}
+      <Card className="border-cyan-400/20 bg-cyan-900/30 backdrop-blur shadow-lg shadow-cyan-500/10">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-slate-200 text-lg">Season Schedule</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-16">
+            <p className="text-slate-400 text-lg">Full season schedule coming soon...</p>
+            <p className="text-slate-500 text-sm mt-2">Track all your players' upcoming games</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
   return (
-    <main className="mx-auto max-w-7xl p-6 space-y-6">
+    <main className="mx-auto max-w-[1600px] p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
         <Button 
@@ -106,10 +228,10 @@ export default function AnalyzeScreen() {
       </Card>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Roster Card - Vertical */}
-        <div className="lg:col-span-1">
-          <Card className="border-cyan-400/20 bg-cyan-900/30 backdrop-blur shadow-lg shadow-cyan-500/10">
+      <div className="grid grid-cols-12 gap-6">
+        {/* Roster Card - Fixed width on left */}
+        <div className="col-span-12 lg:col-span-4 xl:col-span-3">
+          <Card className="border-cyan-400/20 bg-cyan-900/30 backdrop-blur shadow-lg shadow-cyan-500/10 sticky top-6">
             <CardHeader className="pb-4">
               <CardTitle className="text-slate-200 text-lg">My Roster</CardTitle>
             </CardHeader>
@@ -132,7 +254,7 @@ export default function AnalyzeScreen() {
                 </div>
               )}
 
-{!isLoading && !rostersError && memberRoster && (
+              {!isLoading && !rostersError && memberRoster && (
                 <div className="space-y-4">
                   {memberRoster.players?.length === 0 ? (
                     <p className="text-slate-400 text-center py-4">No players on roster</p>
@@ -243,21 +365,66 @@ export default function AnalyzeScreen() {
           </Card>
         </div>
 
-        {/* Empty Horizontal Card */}
-        <div className="lg:col-span-2">
-          <Card className="border-cyan-400/20 bg-cyan-900/30 backdrop-blur shadow-lg shadow-cyan-500/10 h-full min-h-[400px]">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-slate-200 text-lg">Analysis</CardTitle>
-            </CardHeader>
-            <CardContent className="flex items-center justify-center h-full">
-              <div className="text-center py-12">
-                <p className="text-slate-400 text-lg">Analysis tools coming soon...</p>
-                <p className="text-slate-500 text-sm mt-2">This section will contain detailed player analysis and recommendations.</p>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Analysis Section - Expanded width */}
+        <div className="col-span-12 lg:col-span-8 xl:col-span-9">
+          <div className="space-y-6">
+            {/* Analysis Toggle */}
+            <Card className="border-cyan-400/20 bg-cyan-900/30 backdrop-blur shadow-lg shadow-cyan-500/10">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-center gap-2">
+                  <Button
+                    variant={activeView === 'broadcast' ? 'default' : 'outline'}
+                    onClick={() => handleViewChange('broadcast')}
+                    className={`transition-all duration-200 ${
+                      activeView === 'broadcast'
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                        : 'border-cyan-400/30 bg-cyan-800/50 text-slate-200 hover:bg-cyan-700/60'
+                    }`}
+                  >
+                    <Radio className="w-4 h-4 mr-2" />
+                    Broadcast
+                  </Button>
+                  <Button
+                    variant={activeView === 'schedule' ? 'default' : 'outline'}
+                    onClick={() => handleViewChange('schedule')}
+                    className={`transition-all duration-200 ${
+                      activeView === 'schedule'
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                        : 'border-cyan-400/30 bg-cyan-800/50 text-slate-200 hover:bg-cyan-700/60'
+                    }`}
+                  >
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Schedule
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Analysis Content with Transitions */}
+            <div className="relative min-h-[600px]">
+              {activeView === 'broadcast' && renderBroadcastView()}
+              {activeView === 'schedule' && renderScheduleView()}
+            </div>
+          </div>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out forwards;
+        }
+      `}</style>
     </main>
   );
 }

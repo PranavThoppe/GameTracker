@@ -55,3 +55,18 @@ model PlayerSyncLog {
   
   @@map("player_sync_logs")
 }
+
+model Schedule {
+  id        String @id @default(cuid())
+  year      Int
+  week      Int
+  homeTeam  String
+  awayTeam  String 
+  time      String // The detail field with date/time
+  broadcast String? // Single broadcast network
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([year, week, homeTeam, awayTeam])
+  @@map("schedules")
+}
