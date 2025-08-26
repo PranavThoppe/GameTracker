@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, User, Radio, Calendar } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { RosterCard } from "@/components/RosterCard";
+import { ScheduleCard } from "@/components/ScheduleCard";
 
 interface LeagueMember {
   user_id: string;
@@ -15,14 +16,14 @@ interface LeagueMember {
   display_name: string | null;
 }
 
-type AnalysisView = 'broadcast' | 'schedule';
+type AnalysisView = 'schedule' | 'broadcast';
 
 export default function AnalyzeScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const leagueId = searchParams.get("league_id");
   const memberId = searchParams.get("member_id");
-  const [activeView, setActiveView] = useState<AnalysisView>('broadcast');
+  const [activeView, setActiveView] = useState<AnalysisView>('schedule'); // Changed default to schedule
 
   // Fetch league members to get member info
   const { data: members } = useQuery<LeagueMember[]>({
@@ -90,25 +91,13 @@ export default function AnalyzeScreen() {
           <RosterCard leagueId={leagueId} memberId={memberId} />
         </div>
 
-        {/* Analysis Section - Expanded width - Currently Empty */}
+        {/* Analysis Section - Expanded width */}
         <div className="col-span-12 lg:col-span-8 xl:col-span-9">
           <div className="space-y-6">
             {/* Analysis Toggle */}
             <Card className="border-cyan-400/20 bg-cyan-900/30 backdrop-blur shadow-lg shadow-cyan-500/10">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-center gap-2">
-                  <Button
-                    variant={activeView === 'broadcast' ? 'default' : 'outline'}
-                    onClick={() => handleViewChange('broadcast')}
-                    className={`transition-all duration-200 ${
-                      activeView === 'broadcast'
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                        : 'border-cyan-400/30 bg-cyan-800/50 text-slate-200 hover:bg-cyan-700/60'
-                    }`}
-                  >
-                    <Radio className="w-4 h-4 mr-2" />
-                    Broadcast
-                  </Button>
                   <Button
                     variant={activeView === 'schedule' ? 'default' : 'outline'}
                     onClick={() => handleViewChange('schedule')}
@@ -121,20 +110,36 @@ export default function AnalyzeScreen() {
                     <Calendar className="w-4 h-4 mr-2" />
                     Schedule
                   </Button>
+                  <Button
+                    variant={activeView === 'broadcast' ? 'default' : 'outline'}
+                    onClick={() => handleViewChange('broadcast')}
+                    className={`transition-all duration-200 ${
+                      activeView === 'broadcast'
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                        : 'border-cyan-400/30 bg-cyan-800/50 text-slate-200 hover:bg-cyan-700/60'
+                    }`}
+                  >
+                    <Radio className="w-4 h-4 mr-2" />
+                    Broadcast
+                  </Button>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Placeholder for future analysis content */}
-            <Card className="border-cyan-400/20 bg-cyan-900/30 backdrop-blur shadow-lg shadow-cyan-500/10">
-              <CardContent className="pt-6">
-                <div className="text-center py-16">
-                  <p className="text-slate-400 text-lg">
-                    {activeView === 'broadcast' ? 'Broadcast analysis' : 'Schedule analysis'} coming soon...
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Content based on active view */}
+            {activeView === 'schedule' ? (
+              <ScheduleCard />
+            ) : (
+              <Card className="border-cyan-400/20 bg-cyan-900/30 backdrop-blur shadow-lg shadow-cyan-500/10">
+                <CardContent className="pt-6">
+                  <div className="text-center py-16">
+                    <p className="text-slate-400 text-lg">
+                      Broadcast analysis coming soon...
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
