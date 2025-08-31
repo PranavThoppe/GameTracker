@@ -10,7 +10,7 @@ import { Logo } from "@/components/ui/logo";
 import { RosterCard } from "@/components/RosterCard";
 import { ScheduleCard } from "@/components/ScheduleCard";
 import { useNFLState } from "@/app/hooks/useSchedule";
-
+import { BroadcastCard } from "@/components/BroadcastCard";
 interface LeagueMember {
   user_id: string;
   username: string;
@@ -191,18 +191,10 @@ export default function AnalyzeScreen() {
 
             {/* Content based on active view */}
             {activeView === 'schedule' ? (
-              <ScheduleCard year={year} week={week} />
-            ) : (
-              <Card className="border-cyan-400/20 bg-cyan-900/30 backdrop-blur shadow-lg shadow-cyan-500/10">
-                <CardContent className="pt-6">
-                  <div className="text-center py-16">
-                    <p className="text-slate-400 text-lg">
-                      Broadcast analysis coming soon...
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                <ScheduleCard year={year} week={week} />
+              ) : (
+                <BroadcastCard year={year} week={week} />
+              )}
           </div>
         </div>
       </div>
