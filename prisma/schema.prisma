@@ -70,3 +70,21 @@ model Schedule {
   @@unique([year, week, homeTeam, awayTeam])
   @@map("schedules")
 }
+
+model Team {
+  id            String   @id @default(cuid())
+  espnTeamId    Int      @unique
+  name          String
+  abbreviation  String
+  season        Int      @default(2025)
+  wins          Int      @default(0)
+  losses        Int      @default(0)
+  ties          Int      @default(0)
+  winPercentage Float    @default(0)
+  logoUrl       String?
+  updatedAt     DateTime @updatedAt
+  createdAt     DateTime @default(now())
+  
+  @@unique([espnTeamId, season])
+  @@map("teams")
+}
