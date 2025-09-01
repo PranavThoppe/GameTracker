@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useSchedule, useNFLState } from "@/app/hooks/useSchedule";
 import { Calendar, Clock, Radio, Check, HelpCircle } from "lucide-react";
 import { useState } from "react";
+import { TBDGames } from "./TBDGames";
 
 interface BroadcastCardProps {
   teams?: string[];
@@ -138,6 +139,16 @@ export function BroadcastCard({ teams, year, week }: BroadcastCardProps) {
     return false;
   };
 
+  // Helper to check if a game involves Dallas Cowboys
+  const isDallasGame = (game: any): boolean => {
+    return game.homeTeam === 'DAL' || game.awayTeam === 'DAL';
+  };
+
+  // Helper to check if a game starts at exactly 4:05 PM
+  const is405Game = (timeDisplay: string): boolean => {
+    return timeDisplay.includes('4:05 PM');
+  };
+
   const { data: schedule, isLoading, error } = useSchedule({
     year: finalYear,
     week: finalWeek,
@@ -198,8 +209,52 @@ export function BroadcastCard({ teams, year, week }: BroadcastCardProps) {
   const groupGamesByNetworkAndTime = (games: typeof schedule) => {
     if (!games) return { confirmed: {}, tbd: {} };
     
-    const confirmed = games.filter(game => isPrimetimeGame(game.timeDisplay));
-    const tbd = games.filter(game => !isPrimetimeGame(game.timeDisplay));
+    // Find Dallas games first
+    const dallasGames = games.filter(game => isDallasGame(game));
+    
+    // Filter out all 4:05 games unless they're Dallas games, and filter out NFL Network games
+    const filteredGames = games.filter(game => {
+      // Filter out NFL Network games completely (check various formats)
+      const broadcast = (game.broadcast || '').toLowerCase();
+      if (broadcast.includes('nfl net') || broadcast === 'nfln' || broadcast === 'nfl network') {
+        return false;
+      }
+      
+      if (is405Game(game.timeDisplay)) {
+        return isDallasGame(game); // Only keep 4:05 games if they're Dallas games
+      }
+      return true; // Keep all non-4:05 games
+    });
+    
+    // Initial split: primetime goes to confirmed, others to TBD
+    let confirmed = filteredGames.filter(game => isPrimetimeGame(game.timeDisplay));
+    let tbd = filteredGames.filter(game => !isPrimetimeGame(game.timeDisplay));
+    
+    // Process each Dallas game
+    dallasGames.forEach(dallasGame => {
+      // Skip if this Dallas game was filtered out (shouldn't happen since we keep Dallas 4:05 games)
+      if (!filteredGames.find(g => g.id === dallasGame.id)) return;
+      
+      // If Dallas game is not already in confirmed (i.e., it's not primetime), move it there
+      if (!isPrimetimeGame(dallasGame.timeDisplay)) {
+        // Remove Dallas game from TBD and add to confirmed
+        tbd = tbd.filter(game => game.id !== dallasGame.id);
+        confirmed.push(dallasGame);
+      }
+      
+      // Now remove conflicting games from TBD that share same network + time slot
+      const dallasNetwork = dallasGame.broadcast || 'TBD';
+      const dallasTimeSlot = getTimeSlotContext(dallasGame.timeDisplay);
+      
+      // Filter out games that share the same network AND time slot (but keep the Dallas game itself)
+      tbd = tbd.filter(game => {
+        const gameNetwork = game.broadcast || 'TBD';
+        const gameTimeSlot = getTimeSlotContext(game.timeDisplay);
+        
+        // Keep the game if it's not in the same network+timeslot, or if it's also a Dallas game
+        return !(gameNetwork === dallasNetwork && gameTimeSlot === dallasTimeSlot) || isDallasGame(game);
+      });
+    });
     
     // Sort function for games within each group
     const sortByTime = (a: any, b: any) => {
@@ -321,12 +376,16 @@ export function BroadcastCard({ teams, year, week }: BroadcastCardProps) {
                       )
                     : false;
 
+                const isDallas = isDallasGame(game);
+
                 return (
                   <div
                     key={game.id}
                     className={`p-3 rounded-lg border transition-colors ${
                       isTeamGame
                         ? "bg-blue-900/40 border-blue-400/40 shadow-md shadow-blue-500/20"
+                        : isDallas
+                        ? "bg-purple-900/40 border-purple-400/40 shadow-md shadow-purple-500/20"
                         : "bg-slate-800/50 border-slate-600/30"
                     }`}
                   >
@@ -341,6 +400,11 @@ export function BroadcastCard({ teams, year, week }: BroadcastCardProps) {
                             <div className="flex items-center gap-1 px-2 py-1 bg-green-900/40 border border-green-400/30 rounded text-xs text-green-300">
                               <Check className="w-3 h-3" />
                               CONFIRMED
+                            </div>
+                          )}
+                          {isDallas && activeTab === 'confirmed' && !isPrimetimeGame(game.timeDisplay) && (
+                            <div className="flex items-center gap-1 px-2 py-1 bg-purple-900/40 border border-purple-400/30 rounded text-xs text-purple-300">
+                              LOCAL TEAM
                             </div>
                           )}
                           {activeTab === 'tbd' && groupKey.startsWith('TBD') && (
@@ -461,13 +525,22 @@ export function BroadcastCard({ teams, year, week }: BroadcastCardProps) {
 
         {/* Tab Content */}
         <div>
-          <h3 className="text-slate-300 font-semibold text-sm uppercase tracking-wide border-b border-slate-600 pb-1 mb-4">
-            {activeTab === 'confirmed' 
-              ? `Confirmed Broadcasts - Week ${finalWeek} ${teams ? `(${teams.join(", ")})` : ""}`
-              : `Broadcast Assignments - Week ${finalWeek} ${teams ? `(${teams.join(", ")})` : ""}`
-            }
-          </h3>
-          {renderNetworkCards(currentNetworks)}
+          {activeTab === 'confirmed' ? (
+            <div>
+              <h3 className="text-slate-300 font-semibold text-sm uppercase tracking-wide border-b border-slate-600 pb-1 mb-4">
+                {`Confirmed Broadcasts - Week ${finalWeek} ${teams ? `(${teams.join(", ")})` : ""}`}
+              </h3>
+              {renderNetworkCards(confirmed)}
+            </div>
+          ) : (
+            <TBDGames 
+              games={Object.values(tbd).flat()}
+              teams={teams}
+              finalWeek={finalWeek}
+              finalYear={finalYear}
+              isDallasGame={isDallasGame}
+            />
+          )}
         </div>
       </div>
     );
