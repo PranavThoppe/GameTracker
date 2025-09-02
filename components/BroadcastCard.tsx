@@ -205,6 +205,27 @@ export function BroadcastCard({ teams, year, week }: BroadcastCardProps) {
     return 'Games';
   };
 
+  // Helper function to get day priority for sorting (Thursday = 0, Monday = 6)
+  const getDayPriority = (groupKey: string): number => {
+    const lowerKey = groupKey.toLowerCase();
+    
+    if (lowerKey.includes('thursday')) return 0;
+    if (lowerKey.includes('friday')) return 1;
+    if (lowerKey.includes('saturday')) return 2;
+    if (lowerKey.includes('sunday')) {
+      // Sunday games - prioritize by time slot
+      if (lowerKey.includes('early')) return 3;
+      if (lowerKey.includes('late')) return 4;
+      if (lowerKey.includes('night')) return 5;
+      return 3; // Default Sunday games to early slot priority
+    }
+    if (lowerKey.includes('monday')) return 6;
+    
+    // TBD or other games - put them after regular games but before Monday
+    if (lowerKey.includes('tbd')) return 10;
+    return 7; // Other games
+  };
+
   // Group games by network and time slot
   const groupGamesByNetworkAndTime = (games: typeof schedule) => {
     if (!games) return { confirmed: {}, tbd: {} };
@@ -311,9 +332,30 @@ export function BroadcastCard({ teams, year, week }: BroadcastCardProps) {
       return grouped;
     };
     
+    // Group the TBD games first
+    const tbdGrouped = groupByNetworkAndTime(tbd);
+    
+    // Move any single-game groups from TBD to confirmed
+    const singleGameGroups: typeof games = [];
+    const multiGameGroups: Record<string, typeof games> = {};
+    
+    Object.entries(tbdGrouped).forEach(([groupKey, games]) => {
+      if (games.length === 1) {
+        // Single game - move to confirmed
+        singleGameGroups.push(...games);
+      } else {
+        // Multiple games - keep in TBD
+        multiGameGroups[groupKey] = games;
+      }
+    });
+    
+    // Add single-game groups to confirmed games and regroup
+    const finalConfirmed = [...confirmed, ...singleGameGroups];
+    const confirmedGrouped = groupByNetworkAndTime(finalConfirmed);
+    
     return {
-      confirmed: groupByNetworkAndTime(confirmed),
-      tbd: groupByNetworkAndTime(tbd)
+      confirmed: confirmedGrouped,
+      tbd: multiGameGroups
     };
   };
 
@@ -473,16 +515,17 @@ export function BroadcastCard({ teams, year, week }: BroadcastCardProps) {
         );
       }
 
-      // Sort group keys: TBD groups last, others by day/time priority
+      // Sort group keys by day of week: Thursday first, Monday last
       const sortedGroupKeys = groupKeys.sort((a, b) => {
-        // TBD groups go last
-        if (a.startsWith('TBD') && !b.startsWith('TBD')) return 1;
-        if (b.startsWith('TBD') && !a.startsWith('TBD')) return -1;
+        const priorityA = getDayPriority(a);
+        const priorityB = getDayPriority(b);
         
-        // Both TBD - sort alphabetically
-        if (a.startsWith('TBD') && b.startsWith('TBD')) return a.localeCompare(b);
+        // First sort by day priority
+        if (priorityA !== priorityB) {
+          return priorityA - priorityB;
+        }
         
-        // Neither TBD - sort alphabetically
+        // If same day priority, sort alphabetically
         return a.localeCompare(b);
       });
 
