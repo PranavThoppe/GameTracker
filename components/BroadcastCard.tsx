@@ -1,4 +1,3 @@
-// components/BroadcastCard.tsx
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +11,7 @@ interface BroadcastCardProps {
   teams?: string[];
   year?: number;
   week?: number;
+  onSelectGame?: (game: any) => void; // NEW
 }
 
 // --- Helpers to parse "Sun, September 7th at 4:05 PM EDT" into a UTC timestamp ---
@@ -32,8 +32,6 @@ function parseKickoffUTCms(timeDisplay: string, year?: number): number {
   if (!timeDisplay || !year) return Number.POSITIVE_INFINITY;
 
   // Examples: "Sun, September 7th at 4:05 PM EDT"
-  //           "Mon, December 1st at 8:15 PM EST"
-  //           "Thu, November 28th at 12:30 PM ET"  (treat ET as EST/EDT? we'll assume ET ~ EST for sorting)
   const re =
     /^\s*\w{3},\s*([A-Za-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?\s+at\s+(\d{1,2}):(\d{2})\s*(AM|PM)\s*([A-Z]{2,3})?\s*$/;
   const m = timeDisplay.match(re);
@@ -57,7 +55,7 @@ function parseKickoffUTCms(timeDisplay: string, year?: number): number {
   const day = Number(dayStr);
   if (Number.isNaN(day)) return Number.POSITIVE_INFINITY;
 
-  // Normalize tz labels: treat "ET" as "EST" for ordering purposes (close enough for sorting)
+  // Normalize tz labels: treat "ET" as "EST" for ordering purposes
   let tz = (tzRaw || "").toUpperCase();
   if (tz === "ET") tz = "EST";
   if (tz === "PT") tz = "PST";
@@ -66,12 +64,10 @@ function parseKickoffUTCms(timeDisplay: string, year?: number): number {
 
   const offset = TZ_OFFSETS_HOURS[tz] ?? 0; // default 0 if unknown
   // Local time (tz) -> UTC: UTC = local - offsetHours
-  // Example: EDT = UTC-4 -> UTC = local - (-4) = local + 4
-  const utcMs = Date.UTC(year, month, day, hour - offset, minute, 0, 0);
-  return utcMs;
+  return Date.UTC(year, month, day, hour - offset, minute, 0, 0);
 }
 
-export function BroadcastCard({ teams, year, week }: BroadcastCardProps) {
+export function BroadcastCard({ teams, year, week, onSelectGame }: BroadcastCardProps) {
   const [activeTab, setActiveTab] = useState<'confirmed' | 'tbd'>('confirmed');
   
   // Always call hooks in the same order
@@ -89,65 +85,25 @@ export function BroadcastCard({ teams, year, week }: BroadcastCardProps) {
 
   // Helper function to determine if a game is primetime
   const isPrimetimeGame = (timeDisplay: string): boolean => {
-    // Primetime/Special games are typically:
-    // - Thursday games (any time)
-    // - Friday games (any time)
-    // - Sunday Night Football  
-    // - Monday games (any time)
-    // - Saturday games (any time)
-    // - Thanksgiving games (any time on Thursday)
-    // - International games at unusual times
-    
     const lowerTime = timeDisplay.toLowerCase();
-    
-    // Debug log to see what we're working with
-    console.log('Checking primetime for:', timeDisplay, 'lowercase:', lowerTime);
-    
-    // Check day of week - ANY game on these days is confirmed
-    if (lowerTime.includes('thu') || lowerTime.includes('thursday')) {
-      console.log('Found Thursday game (any time)');
-      return true;
-    }
-    if (lowerTime.includes('fri') || lowerTime.includes('friday')) {
-      console.log('Found Friday game (any time)');
-      return true;
-    }
-    if (lowerTime.includes('mon') || lowerTime.includes('monday')) {
-      console.log('Found Monday game (any time)');
-      return true;
-    }
-    if (lowerTime.includes('sat') || lowerTime.includes('saturday')) {
-      console.log('Found Saturday game (any time)');
-      return true;
-    }
-    
-    // Sunday Night Football (typically 8:20 PM ET or later)
+    if (lowerTime.includes('thu') || lowerTime.includes('thursday')) return true;
+    if (lowerTime.includes('fri') || lowerTime.includes('friday')) return true;
+    if (lowerTime.includes('mon') || lowerTime.includes('monday')) return true;
+    if (lowerTime.includes('sat') || lowerTime.includes('saturday')) return true;
+
     if (lowerTime.includes('sun') || lowerTime.includes('sunday')) {
-      // Look for evening times (7 PM or later)
       const eveningTimeRegex = /(\d{1,2}):(\d{2})\s*pm/i;
       const match = timeDisplay.match(eveningTimeRegex);
       if (match) {
-        const hour = parseInt(match[1]);
-        if (hour >= 7) {
-          console.log('Found Sunday night game');
-          return true; // 7 PM or later on Sunday
-        }
+        const hour = parseInt(match[1], 10);
+        if (hour >= 7) return true; // 7 PM or later on Sunday
       }
     }
-    
-    console.log('Not a primetime game');
     return false;
   };
 
-  // Helper to check if a game involves Dallas Cowboys
-  const isDallasGame = (game: any): boolean => {
-    return game.homeTeam === 'DAL' || game.awayTeam === 'DAL';
-  };
-
-  // Helper to check if a game starts at exactly 4:05 PM
-  const is405Game = (timeDisplay: string): boolean => {
-    return timeDisplay.includes('4:05 PM');
-  };
+  const isDallasGame = (game: any): boolean => game.homeTeam === 'DAL' || game.awayTeam === 'DAL';
+  const is405Game = (timeDisplay: string): boolean => timeDisplay.includes('4:05 PM');
 
   const { data: schedule, isLoading, error } = useSchedule({
     year: finalYear,
@@ -156,128 +112,82 @@ export function BroadcastCard({ teams, year, week }: BroadcastCardProps) {
     enabled,
   });
 
-  // Helper function to determine the time slot context
   const getTimeSlotContext = (timeDisplay: string): string => {
     const lowerTime = timeDisplay.toLowerCase();
-    
-    // Check day of week first
-    if (lowerTime.includes('thu') || lowerTime.includes('thursday')) {
-      return 'Thursday Night';
-    }
-    if (lowerTime.includes('fri') || lowerTime.includes('friday')) {
-      return 'Friday Night';
-    }
-    if (lowerTime.includes('mon') || lowerTime.includes('monday')) {
-      return 'Monday Night';
-    }
-    if (lowerTime.includes('sat') || lowerTime.includes('saturday')) {
-      return 'Saturday';
-    }
-    
-    // Sunday games - check time
-    if (lowerTime.includes('sun') || lowerTime.includes('sunday')) {
-      // Look for time patterns
+    if (lowerTime.includes('thu')) return 'Thursday Night';
+    if (lowerTime.includes('fri')) return 'Friday Night';
+    if (lowerTime.includes('mon')) return 'Monday Night';
+    if (lowerTime.includes('sat')) return 'Saturday';
+
+    if (lowerTime.includes('sun')) {
       const timeRegex = /(\d{1,2}):(\d{2})\s*(AM|PM)/i;
       const match = timeDisplay.match(timeRegex);
       if (match) {
-        const hour = parseInt(match[1]);
+        const hour = parseInt(match[1], 10);
         const ampm = match[3].toUpperCase();
-        
         let hour24 = hour;
         if (ampm === 'PM' && hour !== 12) hour24 += 12;
         if (ampm === 'AM' && hour === 12) hour24 = 0;
-        
-        // Sunday Night Football (typically 7 PM or later)
         if (hour24 >= 19) return 'Sunday Night';
-        
-        // Late games (around 4 PM)
         if (hour24 >= 16) return 'Late';
-        
-        // Early games (around 1 PM)
         return 'Early';
       }
-      
-      // Fallback for Sunday games without clear time
       return 'Sunday';
     }
-    
-    // Default fallback
+
     return 'Games';
   };
 
-  // Helper function to get day priority for sorting (Thursday = 0, Monday = 6)
   const getDayPriority = (groupKey: string): number => {
     const lowerKey = groupKey.toLowerCase();
-    
     if (lowerKey.includes('thursday')) return 0;
     if (lowerKey.includes('friday')) return 1;
     if (lowerKey.includes('saturday')) return 2;
     if (lowerKey.includes('sunday')) {
-      // Sunday games - prioritize by time slot
       if (lowerKey.includes('early')) return 3;
       if (lowerKey.includes('late')) return 4;
       if (lowerKey.includes('night')) return 5;
-      return 3; // Default Sunday games to early slot priority
+      return 3;
     }
     if (lowerKey.includes('monday')) return 6;
-    
-    // TBD or other games - put them after regular games but before Monday
     if (lowerKey.includes('tbd')) return 10;
-    return 7; // Other games
+    return 7;
   };
 
-  // Group games by network and time slot
   const groupGamesByNetworkAndTime = (games: typeof schedule) => {
     if (!games) return { confirmed: {}, tbd: {} };
-    
-    // Find Dallas games first
-    const dallasGames = games.filter(game => isDallasGame(game));
-    
-    // Filter out all 4:05 games unless they're Dallas games, and filter out NFL Network games
+
+    const dallasGames = games.filter(isDallasGame);
+
     const filteredGames = games.filter(game => {
-      // Filter out NFL Network games completely (check various formats)
       const broadcast = (game.broadcast || '').toLowerCase();
       if (broadcast.includes('nfl net') || broadcast === 'nfln' || broadcast === 'nfl network') {
         return false;
       }
-      
       if (is405Game(game.timeDisplay)) {
-        return isDallasGame(game); // Only keep 4:05 games if they're Dallas games
+        return isDallasGame(game);
       }
-      return true; // Keep all non-4:05 games
+      return true;
     });
-    
-    // Initial split: primetime goes to confirmed, others to TBD
+
     let confirmed = filteredGames.filter(game => isPrimetimeGame(game.timeDisplay));
     let tbd = filteredGames.filter(game => !isPrimetimeGame(game.timeDisplay));
-    
-    // Process each Dallas game
+
     dallasGames.forEach(dallasGame => {
-      // Skip if this Dallas game was filtered out (shouldn't happen since we keep Dallas 4:05 games)
       if (!filteredGames.find(g => g.id === dallasGame.id)) return;
-      
-      // If Dallas game is not already in confirmed (i.e., it's not primetime), move it there
       if (!isPrimetimeGame(dallasGame.timeDisplay)) {
-        // Remove Dallas game from TBD and add to confirmed
         tbd = tbd.filter(game => game.id !== dallasGame.id);
         confirmed.push(dallasGame);
       }
-      
-      // Now remove conflicting games from TBD that share same network + time slot
       const dallasNetwork = dallasGame.broadcast || 'TBD';
       const dallasTimeSlot = getTimeSlotContext(dallasGame.timeDisplay);
-      
-      // Filter out games that share the same network AND time slot (but keep the Dallas game itself)
       tbd = tbd.filter(game => {
         const gameNetwork = game.broadcast || 'TBD';
         const gameTimeSlot = getTimeSlotContext(game.timeDisplay);
-        
-        // Keep the game if it's not in the same network+timeslot, or if it's also a Dallas game
         return !(gameNetwork === dallasNetwork && gameTimeSlot === dallasTimeSlot) || isDallasGame(game);
       });
     });
-    
-    // Sort function for games within each group
+
     const sortByTime = (a: any, b: any) => {
       const ta = parseKickoffUTCms(a.timeDisplay, finalYear);
       const tb = parseKickoffUTCms(b.timeDisplay, finalYear);
@@ -286,73 +196,41 @@ export function BroadcastCard({ teams, year, week }: BroadcastCardProps) {
       if (byMatchup !== 0) return byMatchup;
       return a.id.localeCompare(b.id);
     };
-    
-    // Group by broadcast network + time slot
+
     const groupByNetworkAndTime = (gamesList: typeof games) => {
       const grouped: Record<string, typeof games> = {};
-      
       gamesList.forEach(game => {
         const network = game.broadcast || 'TBD';
         const timeSlot = getTimeSlotContext(game.timeDisplay);
-        
-        // Create a composite key
         let groupKey: string;
-        
         if (network === 'TBD') {
           groupKey = `TBD ${timeSlot} Games`;
         } else {
-          // For primetime games, use more descriptive names
-          if (timeSlot === 'Thursday Night') {
-            groupKey = `Thursday Night Football - ${network}`;
-          } else if (timeSlot === 'Friday Night') {
-            groupKey = `Friday Night Football - ${network}`;
-          } else if (timeSlot === 'Sunday Night') {
-            groupKey = `Sunday Night Football - ${network}`;
-          } else if (timeSlot === 'Monday Night') {
-            groupKey = `Monday Night Football - ${network}`;
-          } else if (timeSlot === 'Saturday') {
-            groupKey = `Saturday Games - ${network}`;
-          } else {
-            // For Sunday early/late games
-            groupKey = `${network} ${timeSlot} Games`;
-          }
+          if (timeSlot === 'Thursday Night') groupKey = `Thursday Night Football - ${network}`;
+          else if (timeSlot === 'Friday Night') groupKey = `Friday Night Football - ${network}`;
+          else if (timeSlot === 'Sunday Night') groupKey = `Sunday Night Football - ${network}`;
+          else if (timeSlot === 'Monday Night') groupKey = `Monday Night Football - ${network}`;
+          else if (timeSlot === 'Saturday') groupKey = `Saturday Games - ${network}`;
+          else groupKey = `${network} ${timeSlot} Games`;
         }
-        
-        if (!grouped[groupKey]) {
-          grouped[groupKey] = [];
-        }
-        grouped[groupKey].push(game);
+        (grouped[groupKey] ||= []).push(game);
       });
-      
-      // Sort games within each group
-      Object.keys(grouped).forEach(groupKey => {
-        grouped[groupKey].sort(sortByTime);
-      });
-      
+      Object.keys(grouped).forEach(groupKey => grouped[groupKey].sort(sortByTime));
       return grouped;
     };
-    
-    // Group the TBD games first
+
     const tbdGrouped = groupByNetworkAndTime(tbd);
-    
-    // Move any single-game groups from TBD to confirmed
     const singleGameGroups: typeof games = [];
     const multiGameGroups: Record<string, typeof games> = {};
-    
+
     Object.entries(tbdGrouped).forEach(([groupKey, games]) => {
-      if (games.length === 1) {
-        // Single game - move to confirmed
-        singleGameGroups.push(...games);
-      } else {
-        // Multiple games - keep in TBD
-        multiGameGroups[groupKey] = games;
-      }
+      if (games.length === 1) singleGameGroups.push(...games);
+      else multiGameGroups[groupKey] = games;
     });
-    
-    // Add single-game groups to confirmed games and regroup
+
     const finalConfirmed = [...confirmed, ...singleGameGroups];
     const confirmedGrouped = groupByNetworkAndTime(finalConfirmed);
-    
+
     return {
       confirmed: confirmedGrouped,
       tbd: multiGameGroups
@@ -385,13 +263,10 @@ export function BroadcastCard({ teams, year, week }: BroadcastCardProps) {
     }
 
     const { confirmed, tbd } = groupGamesByNetworkAndTime(schedule);
-    
-    // Count total games for tab buttons
     const confirmedCount = Object.values(confirmed).flat().length;
     const tbdCount = Object.values(tbd).flat().length;
-    
     const currentNetworks = activeTab === 'confirmed' ? confirmed : tbd;
-    
+
     const renderNetworkCard = (groupKey: string, games: typeof schedule) => {
       if (!games?.length) return null;
 
@@ -423,13 +298,19 @@ export function BroadcastCard({ teams, year, week }: BroadcastCardProps) {
                 return (
                   <div
                     key={game.id}
-                    className={`p-3 rounded-lg border transition-colors ${
-                      isTeamGame
-                        ? "bg-blue-900/40 border-blue-400/40 shadow-md shadow-blue-500/20"
-                        : isDallas
-                        ? "bg-purple-900/40 border-purple-400/40 shadow-md shadow-purple-500/20"
-                        : "bg-slate-800/50 border-slate-600/30"
-                    }`}
+                    onClick={onSelectGame ? () => onSelectGame(game) : undefined} // NEW
+                    className={`p-3 rounded-lg border transition-colors
+                      ${
+                        isTeamGame
+                          ? "bg-blue-900/40 border-blue-400/40 shadow-md shadow-blue-500/20"
+                          : isDallas
+                          ? "bg-purple-900/40 border-purple-400/40 shadow-md shadow-purple-500/20"
+                          : "bg-slate-800/50 border-slate-600/30"
+                      }
+                      ${onSelectGame ? "cursor-pointer hover:border-cyan-300/40 hover:bg-slate-700/60" : ""}`
+                    }
+                    role={onSelectGame ? "button" : undefined}
+                    aria-label={onSelectGame ? `Open matchup ${game.matchup}` : undefined}
                   >
                     <div className="space-y-2">
                       {/* Matchup */}
@@ -502,7 +383,6 @@ export function BroadcastCard({ teams, year, week }: BroadcastCardProps) {
 
     const renderNetworkCards = (networks: Record<string, typeof schedule>) => {
       const groupKeys = Object.keys(networks);
-      
       if (groupKeys.length === 0) {
         return (
           <div className="text-center py-8">
@@ -515,17 +395,10 @@ export function BroadcastCard({ teams, year, week }: BroadcastCardProps) {
         );
       }
 
-      // Sort group keys by day of week: Thursday first, Monday last
       const sortedGroupKeys = groupKeys.sort((a, b) => {
         const priorityA = getDayPriority(a);
         const priorityB = getDayPriority(b);
-        
-        // First sort by day priority
-        if (priorityA !== priorityB) {
-          return priorityA - priorityB;
-        }
-        
-        // If same day priority, sort alphabetically
+        if (priorityA !== priorityB) return priorityA - priorityB;
         return a.localeCompare(b);
       });
 
@@ -550,7 +423,7 @@ export function BroadcastCard({ teams, year, week }: BroadcastCardProps) {
             }`}
           >
             <Check className="w-4 h-4 mr-2" />
-            CONFIRMED {confirmedCount > 1 ? `(${confirmedCount})` : ''}
+            CONFIRMED {Object.values(confirmed).flat().length > 1 ? `(${Object.values(confirmed).flat().length})` : ''}
           </Button>
           <Button
             variant={activeTab === 'tbd' ? 'default' : 'outline'}
@@ -562,7 +435,7 @@ export function BroadcastCard({ teams, year, week }: BroadcastCardProps) {
             }`}
           >
             <HelpCircle className="w-4 h-4 mr-2" />
-            TBD {tbdCount > 1 ? `(${tbdCount})` : ''}
+            TBD {Object.values(tbd).flat().length > 1 ? `(${Object.values(tbd).flat().length})` : ''}
           </Button>
         </div>
 
@@ -581,7 +454,8 @@ export function BroadcastCard({ teams, year, week }: BroadcastCardProps) {
               teams={teams}
               finalWeek={finalWeek}
               finalYear={finalYear}
-              isDallasGame={isDallasGame}
+              isDallasGame={(g) => g.homeTeam === 'DAL' || g.awayTeam === 'DAL'}
+              onSelectGame={onSelectGame} // NEW (forward to TBDGames)
             />
           )}
         </div>

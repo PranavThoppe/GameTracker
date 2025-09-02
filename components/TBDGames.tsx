@@ -1,8 +1,7 @@
-// components/TBDGames.tsx
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, Radio, HelpCircle, Target, Loader2, TrendingUp } from "lucide-react";
+import { Clock, Radio, HelpCircle, Loader2, TrendingUp } from "lucide-react";
 import { useMemo } from "react";
 import { useGameTeamRecords, useGroupedMLPredictions } from "@/app/hooks/useTeamRecords";
 
@@ -24,6 +23,7 @@ interface TBDGamesProps {
   finalWeek?: number;
   finalYear?: number;
   isDallasGame: (game: Game) => boolean;
+  onSelectGame?: (game: Game) => void; // NEW
 }
 
 /** ---- Time parsing helpers ---- */
@@ -84,7 +84,7 @@ function getSundaySlot(timeDisplay: string): SundaySlot {
 }
 
 /** ---- Component ---- */
-export function TBDGames({ games, teams, finalWeek, finalYear, isDallasGame }: TBDGamesProps) {
+export function TBDGames({ games, teams, finalWeek, finalYear, isDallasGame, onSelectGame }: TBDGamesProps) {
   // 1) team records (all games)
   const { data: teamRecords = [], isLoading: recordsLoading, error: recordsError } = useGameTeamRecords(games);
 
@@ -172,7 +172,7 @@ export function TBDGames({ games, teams, finalWeek, finalYear, isDallasGame }: T
 
     const isTop = (g: Game) => preds?.top_game_id === gameIdFor(g);
 
-    // NEW: sort inside the card by probability (desc), fallback by time/matchup/id
+    // sort inside the card by probability (desc), fallback by time/matchup/id
     const probFor = (g: Game) => predictionFor(g)?.probability ?? -1;
     const sortByFallback = (a: Game, b: Game) => {
       const ta = parseKickoffUTCms(a.timeDisplay, finalYear);
@@ -223,6 +223,7 @@ export function TBDGames({ games, teams, finalWeek, finalYear, isDallasGame }: T
               return (
                 <div
                   key={game.id}
+                  onClick={onSelectGame ? () => onSelectGame(game) : undefined} // NEW
                   className={`p-3 rounded-lg border transition-colors ${
                     isTopPick
                       ? "bg-green-900/40 border-green-400/40 shadow-md shadow-green-500/20"
@@ -231,7 +232,9 @@ export function TBDGames({ games, teams, finalWeek, finalYear, isDallasGame }: T
                       : isDallas
                       ? "bg-purple-900/40 border-purple-400/40 shadow-md shadow-purple-500/20"
                       : "bg-slate-800/50 border-slate-600/30"
-                  }`}
+                  } ${onSelectGame ? "cursor-pointer hover:border-cyan-300/40 hover:bg-slate-700/60" : ""}`}
+                  role={onSelectGame ? "button" : undefined}
+                  aria-label={onSelectGame ? `Open matchup ${game.matchup}` : undefined}
                 >
                   <div className="space-y-2">
                     {/* Matchup */}
