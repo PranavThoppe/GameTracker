@@ -1,0 +1,194 @@
+{
+  "DAL": {
+    "isLocalTeam": true,
+    "divisionRivals": ["NYG", "PHI", "WAS"],
+    "inStateTeams": true,
+    "displayName": "Dallas Cowboys"
+  },
+  "HOU": {
+    "isLocalTeam": false,
+    "divisionRivals": ["IND", "JAX", "TEN"],
+    "inStateTeams": true,
+    "displayName": "Houston Texans"
+  },
+  "NYG": {
+    "isLocalTeam": false,
+    "divisionRivals": ["DAL", "PHI", "WAS"],
+    "inStateTeams": false,
+    "displayName": "New York Giants"
+  },
+  "PHI": {
+    "isLocalTeam": false,
+    "divisionRivals": ["DAL", "NYG", "WAS"],
+    "inStateTeams": false,
+    "displayName": "Philadelphia Eagles"
+  },
+  "WAS": {
+    "isLocalTeam": false,
+    "divisionRivals": ["DAL", "NYG", "PHI"],
+    "inStateTeams": false,
+    "displayName": "Washington Commanders"
+  },
+  "BUF": {
+    "isLocalTeam": false,
+    "divisionRivals": ["MIA", "NE", "NYJ"],
+    "inStateTeams": false,
+    "displayName": "Buffalo Bills"
+  },
+  "MIA": {
+    "isLocalTeam": false,
+    "divisionRivals": ["BUF", "NE", "NYJ"],
+    "inStateTeams": false,
+    "displayName": "Miami Dolphins"
+  },
+  "NE": {
+    "isLocalTeam": false,
+    "divisionRivals": ["BUF", "MIA", "NYJ"],
+    "inStateTeams": false,
+    "displayName": "New England Patriots"
+  },
+  "NYJ": {
+    "isLocalTeam": false,
+    "divisionRivals": ["BUF", "MIA", "NE"],
+    "inStateTeams": false,
+    "displayName": "New York Jets"
+  },
+  "CHI": {
+    "isLocalTeam": false,
+    "divisionRivals": ["DET", "GB", "MIN"],
+    "inStateTeams": false,
+    "displayName": "Chicago Bears"
+  },
+  "DET": {
+    "isLocalTeam": false,
+    "divisionRivals": ["CHI", "GB", "MIN"],
+    "inStateTeams": false,
+    "displayName": "Detroit Lions"
+  },
+  "GB": {
+    "isLocalTeam": false,
+    "divisionRivals": ["CHI", "DET", "MIN"],
+    "inStateTeams": false,
+    "displayName": "Green Bay Packers"
+  },
+  "MIN": {
+    "isLocalTeam": false,
+    "divisionRivals": ["CHI", "DET", "GB"],
+    "inStateTeams": false,
+    "displayName": "Minnesota Vikings"
+  },
+  "ATL": {
+    "isLocalTeam": false,
+    "divisionRivals": ["CAR", "NO", "TB"],
+    "inStateTeams": false,
+    "displayName": "Atlanta Falcons"
+  },
+  "CAR": {
+    "isLocalTeam": false,
+    "divisionRivals": ["ATL", "NO", "TB"],
+    "inStateTeams": false,
+    "displayName": "Carolina Panthers"
+  },
+  "NO": {
+    "isLocalTeam": false,
+    "divisionRivals": ["ATL", "CAR", "TB"],
+    "inStateTeams": false,
+    "displayName": "New Orleans Saints"
+  },
+  "TB": {
+    "isLocalTeam": false,
+    "divisionRivals": ["ATL", "CAR", "NO"],
+    "inStateTeams": false,
+    "displayName": "Tampa Bay Buccaneers"
+  },
+  "ARI": {
+    "isLocalTeam": false,
+    "divisionRivals": ["LAR", "SEA", "SF"],
+    "inStateTeams": false,
+    "displayName": "Arizona Cardinals"
+  },
+  "LAR": {
+    "isLocalTeam": false,
+    "divisionRivals": ["ARI", "SEA", "SF"],
+    "inStateTeams": false,
+    "displayName": "Los Angeles Rams"
+  },
+  "SEA": {
+    "isLocalTeam": false,
+    "divisionRivals": ["ARI", "LAR", "SF"],
+    "inStateTeams": false,
+    "displayName": "Seattle Seahawks"
+  },
+  "SF": {
+    "isLocalTeam": false,
+    "divisionRivals": ["ARI", "LAR", "SEA"],
+    "inStateTeams": false,
+    "displayName": "San Francisco 49ers"
+  },
+  "BAL": {
+    "isLocalTeam": false,
+    "divisionRivals": ["CIN", "CLE", "PIT"],
+    "inStateTeams": false,
+    "displayName": "Baltimore Ravens"
+  },
+  "CIN": {
+    "isLocalTeam": false,
+    "divisionRivals": ["BAL", "CLE", "PIT"],
+    "inStateTeams": false,
+    "displayName": "Cincinnati Bengals"
+  },
+  "CLE": {
+    "isLocalTeam": false,
+    "divisionRivals": ["BAL", "CIN", "PIT"],
+    "inStateTeams": false,
+    "displayName": "Cleveland Browns"
+  },
+  "PIT": {
+    "isLocalTeam": false,
+    "divisionRivals": ["BAL", "CIN", "CLE"],
+    "inStateTeams": false,
+    "displayName": "Pittsburgh Steelers"
+  },
+  "DEN": {
+    "isLocalTeam": false,
+    "divisionRivals": ["KC", "LV", "LAC"],
+    "inStateTeams": false,
+    "displayName": "Denver Broncos"
+  },
+  "KC": {
+    "isLocalTeam": false,
+    "divisionRivals": ["DEN", "LV", "LAC"],
+    "inStateTeams": false,
+    "displayName": "Kansas City Chiefs"
+  },
+  "LV": {
+    "isLocalTeam": false,
+    "divisionRivals": ["DEN", "KC", "LAC"],
+    "inStateTeams": false,
+    "displayName": "Las Vegas Raiders"
+  },
+  "LAC": {
+    "isLocalTeam": false,
+    "divisionRivals": ["DEN", "KC", "LV"],
+    "inStateTeams": false,
+    "displayName": "Los Angeles Chargers"
+  },
+  "IND": {
+    "isLocalTeam": false,
+    "divisionRivals": ["HOU", "JAX", "TEN"],
+    "inStateTeams": false,
+    "displayName": "Indianapolis Colts"
+  },
+  "JAX": {
+    "isLocalTeam": false,
+    "divisionRivals": ["HOU", "IND", "TEN"],
+    "inStateTeams": false,
+    "displayName": "Jacksonville Jaguars"
+  },
+  "TEN": {
+    "isLocalTeam": false,
+    "divisionRivals": ["HOU", "IND", "JAX"],
+    "inStateTeams": false,
+    "displayName": "Tennessee Titans"
+  }
+}
