@@ -3,7 +3,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, Radio } from "lucide-react";
+import {ArrowLeft, Calendar, Clock, Radio } from "lucide-react";
+
 
 export interface Game {
   id: string;
@@ -31,8 +32,13 @@ export default function MatchupCard({
           {game.awayTeam} @ {game.homeTeam}
           <span className="text-slate-400 text-sm font-normal">• Week {game.week}</span>
         </CardTitle>
-        <Button variant="ghost" onClick={onBack} aria-label="Go back">
-          ← Back
+        <Button
+          variant="outline"
+          onClick={onBack}
+          className="border-cyan-400/30 bg-cyan-800/50 text-slate-200 hover:bg-cyan-700/60 hover:border-cyan-300/40"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back
         </Button>
       </CardHeader>
 
