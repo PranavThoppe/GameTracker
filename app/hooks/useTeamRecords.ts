@@ -1,5 +1,5 @@
 // app/hooks/useTeamRecords.ts
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueries } from '@tanstack/react-query';
 
 interface TeamRecord {
   id: string
@@ -150,4 +150,45 @@ export function useGamePredictions(games: Game[]) {
     isLoading: recordsLoading || predictionsLoading,
     error: recordsError || predictionsError
   }
+}
+
+export function useGroupedMLPredictions(
+  groupedGames: Record<string, Game[]>,
+  teamRecords: TeamRecord[]
+) {
+  const entries = Object.entries(groupedGames);
+
+  const queries = useQueries({
+    queries: entries.map(([groupKey, games]) => ({
+      queryKey: [
+        'ml-predictions',
+        groupKey, // make each group unique
+        {
+          gameIds: games.map(g => g.id).sort(),
+          teamRecordIds: teamRecords.map(t => t.id).sort(),
+        }
+      ],
+      queryFn: async () => {
+        if (!games.length || !teamRecords.length) {
+          throw new Error('Games and team records are required');
+        }
+        const res = await fetch('/api/ml-predictions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ games, teamRecords })
+        });
+        if (!res.ok) {
+          const txt = await res.text();
+          throw new Error(`Failed to fetch ML predictions: ${res.status} ${txt}`);
+        }
+        return res.json() as Promise<MLPredictions>;
+      },
+      enabled: games.length > 0 && teamRecords.length > 0,
+      staleTime: 5 * 60 * 1000,
+      retry: 2,
+    }))
+  });
+
+  // Return an object keyed by groupKey with each query result
+  return Object.fromEntries(entries.map(([k], i) => [k, queries[i]]));
 }
