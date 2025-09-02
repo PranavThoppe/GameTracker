@@ -3,8 +3,10 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Calendar, Clock, Radio, Loader2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, Radio, Star, Loader2, AlertCircle } from "lucide-react";
 import { useStarters } from "@/app/hooks/useStarters";
+import { usePlayersByIds } from "../app/hooks/usePlayers";
+import { useQuery } from "@tanstack/react-query";
 
 export interface Game {
   id: string;
@@ -31,22 +33,67 @@ interface Player {
   injuryStatus: string | null
 }
 
+interface Roster {
+  owner_id: string;
+  roster_id: number;
+  players: string[];
+  starters: string[];
+  reserve?: string[];
+  taxi?: string[];
+}
+
 type Position = 'QB' | 'RB' | 'WR' | 'TE' | 'K'
+
+interface MatchupCardProps {
+  game: Game;
+  onBack: () => void;
+  leagueId?: string;
+  memberId?: string;
+}
 
 export default function MatchupCard({
   game,
   onBack,
-}: {
-  game: Game;
-  onBack: () => void;
-}) {
+  leagueId,
+  memberId,
+}: MatchupCardProps) {
   const { data: starters, isLoading, error } = useStarters({
     homeTeam: game.homeTeam,
     awayTeam: game.awayTeam
   })
 
-  console.log('Starters data:', starters)
-  console.log('Loading:', isLoading, 'Error:', error)
+  // Fetch rosters for the league (only if league data provided)
+  const { data: rosters } = useQuery<Roster[]>({
+    enabled: !!leagueId,
+    queryKey: ["rosters", leagueId],
+    queryFn: async () => {
+      const r = await fetch(`https://api.sleeper.app/v1/league/${leagueId}/rosters`);
+      if (!r.ok) throw new Error("failed to fetch rosters");
+      return r.json();
+    },
+  });
+
+  // Find the specific roster for this member
+  const memberRoster = rosters?.find(roster => roster.owner_id === memberId);
+
+  // Fetch player data for the roster
+  const { data: fantasyPlayers } = usePlayersByIds(
+    memberRoster?.players || [],
+    !!memberRoster?.players?.length
+  );
+
+  // Find fantasy players playing in this game
+  const getFantasyPlayersInGame = () => {
+    if (!fantasyPlayers || !memberRoster) return [];
+    
+    return fantasyPlayers.filter(player => {
+      const playerTeam = player.team || player.teamAbbr;
+      return playerTeam === game.homeTeam || playerTeam === game.awayTeam;
+    });
+  };
+
+  const fantasyPlayersInGame = getFantasyPlayersInGame();
+  const hasFantasyPlayers = fantasyPlayersInGame.length > 0;
 
   // Position colors for consistent styling
   const positionColors = {
@@ -56,6 +103,15 @@ export default function MatchupCard({
     'TE': 'bg-yellow-900/30 border-yellow-400/30 text-yellow-300',
     'K': 'bg-purple-900/30 border-purple-400/30 text-purple-300'
   }
+
+  // Check if a player is on your fantasy team
+  const isFantasyPlayer = (playerId: string) => {
+    return memberRoster?.players?.includes(playerId) || false;
+  };
+
+  const isFantasyStarter = (playerId: string) => {
+    return memberRoster?.starters?.includes(playerId) || false;
+  };
 
   const renderTeamStarters = (teamAbbr: string, teamStarters: Partial<Record<Position, Player[]>>) => {
     const positions: Position[] = ['QB', 'RB', 'WR', 'TE', 'K']
@@ -75,23 +131,40 @@ export default function MatchupCard({
                 {position}
               </h4>
               {players.length > 0 ? (
-                players.map(player => (
-                  <div 
-                    key={player.id}
-                    className={`p-2 rounded border ${colorClass}`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">
-                        {player.fullName || `${player.firstName} ${player.lastName}` || 'Unknown Player'}
-                      </span>
-                    </div>
-                    {player.injuryStatus && (
-                      <div className="mt-1 px-1 py-0.5 bg-red-600/20 text-red-400 text-xs rounded border border-red-400/30">
-                        {player.injuryStatus.toUpperCase()}
+                players.map(player => {
+                  const isOnFantasyTeam = isFantasyPlayer(player.id);
+                  const isFantasyTeamStarter = isFantasyStarter(player.id);
+                  
+                  return (
+                    <div 
+                      key={player.id}
+                      className={`p-2 rounded border ${colorClass} ${
+                        isOnFantasyTeam ? 'ring-2 ring-yellow-400/50 shadow-lg' : ''
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {isOnFantasyTeam && (
+                            <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                          )}
+                          <span className="text-sm font-medium">
+                            {player.fullName || `${player.firstName} ${player.lastName}` || 'Unknown Player'}
+                          </span>
+                        </div>
+                        {isFantasyTeamStarter && (
+                          <span className="text-xs bg-green-600/20 text-green-400 px-1 py-0.5 rounded border border-green-400/30">
+                            STARTER
+                          </span>
+                        )}
                       </div>
-                    )}
-                  </div>
-                ))
+                      {player.injuryStatus && (
+                        <div className="mt-1 px-1 py-0.5 bg-red-600/20 text-red-400 text-xs rounded border border-red-400/30">
+                          {player.injuryStatus.toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
               ) : (
                 <div className="p-2 rounded border border-slate-600/30 bg-slate-800/30">
                   <span className="text-xs text-slate-500">No {position} available</span>
@@ -110,6 +183,14 @@ export default function MatchupCard({
         <CardTitle className="text-slate-200 text-lg flex items-center gap-2">
           {game.awayTeam} @ {game.homeTeam}
           <span className="text-slate-400 text-sm font-normal">• Week {game.week}</span>
+          {hasFantasyPlayers && (
+            <div className="flex items-center gap-1 ml-2">
+              <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+              <span className="text-xs text-yellow-400 font-medium">
+                {fantasyPlayersInGame.length} player{fantasyPlayersInGame.length > 1 ? 's' : ''}
+              </span>
+            </div>
+          )}
         </CardTitle>
         <Button
           variant="outline"
@@ -139,6 +220,43 @@ export default function MatchupCard({
           </div>
         </div>
 
+        {/* Fantasy Players Summary (only if we have league data and players in game) */}
+        {hasFantasyPlayers && (
+          <div className="p-3 bg-yellow-900/20 border border-yellow-400/30 rounded-lg">
+            <h4 className="text-yellow-300 font-medium text-sm mb-2 flex items-center gap-1">
+              <Star className="w-3 h-3 fill-yellow-300" />
+              Your Players in This Game
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {fantasyPlayersInGame.map(player => {
+                const position = player.position || 'UNK';
+                const isStarter = memberRoster?.starters?.includes(player.id);
+                
+                // Special handling for DEF names
+                const displayName = position === 'DEF' 
+                  ? `${player.team || player.teamAbbr || 'Unknown'} Defense`
+                  : player.fullName || `Player ${player.id.slice(-4)}`;
+                
+                return (
+                  <div key={player.id} className="flex items-center gap-2 text-sm">
+                    <span className="text-slate-200">{displayName}</span>
+                    <span className="text-slate-400">({position})</span>
+                    {isStarter && (
+                      <span className="text-xs bg-green-600/20 text-green-400 px-1 py-0.5 rounded border border-green-400/30">
+                        STARTER
+                      </span>
+                    )}
+                    {player.injuryStatus && (
+                      <span className="text-xs bg-red-600/20 text-red-400 px-1 py-0.5 rounded border border-red-400/30">
+                        {player.injuryStatus.toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Starters Section */}
         <div>

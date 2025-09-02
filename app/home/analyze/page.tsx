@@ -132,7 +132,12 @@ export default function AnalyzeScreen() {
           <div className="space-y-6">
             {/* If a game is selected, show Matchup view and skip the toggles */}
             {selectedGame ? (
-              <MatchupCard game={selectedGame} onBack={() => setSelectedGame(null)} />
+             <MatchupCard 
+              game={selectedGame} 
+              onBack={() => setSelectedGame(null)}
+              leagueId={leagueId}  // Add league ID for fantasy indicators
+              memberId={memberId}  // Add member ID for fantasy indicators
+            />
             ) : (
               <>
                 {/* Analysis Toggle + Week Navigator */}

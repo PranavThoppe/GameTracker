@@ -303,8 +303,6 @@ export function BroadcastCard({ teams, year, week, onSelectGame }: BroadcastCard
                       ${
                         isTeamGame
                           ? "bg-blue-900/40 border-blue-400/40 shadow-md shadow-blue-500/20"
-                          : isDallas
-                          ? "bg-purple-900/40 border-purple-400/40 shadow-md shadow-purple-500/20"
                           : "bg-slate-800/50 border-slate-600/30"
                       }
                       ${onSelectGame ? "cursor-pointer hover:border-cyan-300/40 hover:bg-slate-700/60" : ""}`

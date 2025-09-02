@@ -69,11 +69,9 @@ export async function POST() {
         
         // Update team record
         await db.team.updateMany({
-          where: {
-            espnTeamId_season: {
-              espnTeamId: team.espnTeamId,
-              season: 2025
-            }
+          where: {   
+            espnTeamId: team.espnTeamId,
+            season: 2025
           },
           data: {
             wins,
