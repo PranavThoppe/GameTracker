@@ -96,9 +96,15 @@ async function syncWeekSchedule(year: number, week: number) {
 }
 
 export async function POST(req: NextRequest) {
+  const startTime = Date.now()
+  
   try {
-    // Get current NFL state
-    const nflStateRes = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/sleeper/nfl-state`)
+    // Get current NFL state with proper URL handling for Vercel
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : process.env.NEXTAUTH_URL || 'http://localhost:3000'
+    
+    const nflStateRes = await fetch(`${baseUrl}/api/sleeper/nfl-state`)
     if (!nflStateRes.ok) {
       throw new Error('Failed to fetch NFL state')
     }
@@ -145,7 +151,7 @@ export async function POST(req: NextRequest) {
       }
     }
     
-    console.log(`Schedule sync complete. Total: ${totalSynced} synced, ${totalSkipped} skipped`)
+    console.log(`Schedule sync complete in ${Date.now() - startTime}ms. Total: ${totalSynced} synced, ${totalSkipped} skipped`)
     
     return Response.json({
       success: true,
@@ -154,6 +160,7 @@ export async function POST(req: NextRequest) {
       season,
       totalSynced,
       totalSkipped,
+      duration: Date.now() - startTime,
       weekResults: results
     })
     
@@ -182,7 +189,11 @@ export async function GET(req: NextRequest) {
   
   // Return current sync status/info
   try {
-    const nflStateRes = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/sleeper/nfl-state`)
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : process.env.NEXTAUTH_URL || 'http://localhost:3000'
+    
+    const nflStateRes = await fetch(`${baseUrl}/api/sleeper/nfl-state`)
     if (!nflStateRes.ok) {
       throw new Error('Failed to fetch NFL state')
     }
