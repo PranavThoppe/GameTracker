@@ -4,7 +4,7 @@ A modern fantasy football analysis tool that integrates with Sleeper Fantasy Foo
 
 ## 🚀 Live Demo
 
-**[View Live App on Vercel →](https://your-app-url.vercel.app)**
+**[View Live App on Vercel →]([https://your-app-url.vercel.app](https://vercel.com/pranavthoppes-projects/game-tracker))**
 
 ## ✨ Features
 
