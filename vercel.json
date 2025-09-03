@@ -5,12 +5,8 @@
       "schedule": "0 2 * * *"
     },
     {
-      "path": "/api/sync/teams",
+      "path": "/api/sync",
       "schedule": "0 4 * * 2"
-    },
-    {
-      "path": "/api/schedule/sync",
-      "schedule": "0 3 * * 2"
     }
   ]
 }
