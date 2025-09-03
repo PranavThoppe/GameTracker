@@ -6,77 +6,64 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const year = searchParams.get('year')
   const week = searchParams.get('week')
-  const teams = searchParams.get('teams') // comma-separated list of team abbreviations
-  
+  const teams = searchParams.get('teams') // comma-separated team abbreviations, e.g., "DAL,HOU"
+
   try {
-    // Build the SQL query dynamically
-    let whereConditions: string[] = []
-    let queryParams: (string | number)[] = []
-    
-    // Filter by year
-    if (year) {
-      whereConditions.push(`year = ?`)
-      queryParams.push(parseInt(year))
-    }
-    
-    // Filter by week
-    if (week) {
-      whereConditions.push(`week = ?`)
-      queryParams.push(parseInt(week))
-    }
-    
-    // Filter by teams
+    // Build Prisma where clause
+    const where: any = {}
+
+    if (year) where.year = Number(year)
+    if (week) where.week = Number(week)
+
     if (teams) {
       const teamList = teams.split(',').map(t => t.trim().toUpperCase())
-      const teamPlaceholders = teamList.map(() => '?').join(',')
-      whereConditions.push(`(homeTeam IN (${teamPlaceholders}) OR awayTeam IN (${teamPlaceholders}))`)
-      queryParams.push(...teamList, ...teamList) // Add for both home and away
+      // homeTeam IN (...) OR awayTeam IN (...)
+      where.OR = [
+        { homeTeam: { in: teamList } },
+        { awayTeam: { in: teamList } },
+      ]
     }
-    
-    // Build final query
-    let query = `
-      SELECT id, year, week, homeTeam, awayTeam, time, broadcast, createdAt, updatedAt
-      FROM schedules
-    `
-    
-    if (whereConditions.length > 0) {
-      query += ` WHERE ${whereConditions.join(' AND ')}`
-    }
-    
-    query += ` ORDER BY year ASC, week ASC, time ASC`
-    
-    console.log('Executing query:', query)
-    console.log('With params:', queryParams)
-    
-    // Execute raw SQL query
-    const games = await db.$queryRawUnsafe(query, ...queryParams) as any[]
-    
-    console.log(`Found ${games.length} games`)
-    
-    // Transform the data to include game status and additional info
-   const gamesWithStatus = games.map(game => {
-    return {
-            id: String(game.id),
-            year: Number(game.year),
-            week: Number(game.week),
-            homeTeam: String(game.homeTeam),
-            awayTeam: String(game.awayTeam),
-            timeDisplay: String(game.time),   // just send the ESPN string
-            broadcast: game.broadcast ? String(game.broadcast) : null,
-            matchup: `${game.awayTeam} @ ${game.homeTeam}`,
-            status: 'scheduled',              // static for now
-        }
+
+    const games = await db.schedule.findMany({
+      where,
+      orderBy: [
+        { year: 'asc' },
+        { week: 'asc' },
+        { time: 'asc' }, // you're storing ESPN's string; this still sorts OK most of the time
+      ],
+      select: {
+        id: true,
+        year: true,
+        week: true,
+        homeTeam: true,
+        awayTeam: true,
+        time: true,
+        broadcast: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     })
-    
+
+    const gamesWithStatus = games.map((g) => ({
+      id: String(g.id),
+      year: Number(g.year),
+      week: Number(g.week),
+      homeTeam: String(g.homeTeam),
+      awayTeam: String(g.awayTeam),
+      timeDisplay: String(g.time),            // keep ESPN string
+      broadcast: g.broadcast ?? null,
+      matchup: `${g.awayTeam} @ ${g.homeTeam}`,
+      status: 'scheduled' as const,
+    }))
+
     return Response.json(gamesWithStatus)
-    
   } catch (error) {
     console.error('Failed to fetch schedule:', error)
     return Response.json(
-      { 
+      {
         error: 'Failed to fetch schedule',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      }, 
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     )
   }
