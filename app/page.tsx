@@ -133,6 +133,11 @@ export default function Page() {
             {errorMsg && <p className="text-sm text-red-400">{errorMsg}</p>}
           </CardContent>
         </Card>
+       <div className="mt-4 max-w-sm mx-auto border border-cyan-400/50 rounded-lg p-2 text-center">
+        <p className="text-sm text-slate-300">
+          Use username: <span className="font-mono text-cyan-400">GameTrackerDemo</span> to demo
+        </p>
+      </div>
       </div>
     </main>
   );
